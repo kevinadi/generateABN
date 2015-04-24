@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      td { text-align: center; }
+    </style>
+  </head>
+<body>
+<head><title>ABN/TFN/IRD generator</title></head>
+<table>
+  <tr>
+    <td>
+    <button type="button" onclick="javascript:printNumbers('ABN',generateABN(10))">Generate ABN</button>
+    </td>
+    <td>
+    <button type="button" onclick="javascript:printNumbers('TFN',generateTFN(10))">Generate TFN</button>
+    </td>
+    <td>
+    <button type="button" onclick="javascript:printNumbers('IRD',generateIRD(10))">Generate IRD</button>
+    </td>
+  </tr>
+  <tr>
+    <td>
+    <pre id="ABN"></pre>
+    </td>
+    <td>
+    <pre id="TFN"></pre>
+    </td>
+    <td>
+    <pre id="IRD"></pre>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+
+function printNumbers(elementID, list) {
+  document.getElementById(elementID).innerHTML = list.join("<br/>");
+};
+
+function zip(arrays) {
+  return arrays[0].map(function(_,i){
+    return arrays.map(function(array){return array[i]})
+  });
+};
+
+function randRange(n, from , to) {
+  return Array.apply(0, Array(n))
+              .map(function(){return Math.floor((Math.random() * to) + from)})
+};
+
+function generateValidNumbers(n, length, validator, l) {
+  if (n <= 0) return l;
+  var l = l || [];
+  var nums = randRange(length, 0, 10).join("");
+  return (validator(nums)) ? generateValidNumbers(n-1, length, validator, l.concat(nums))
+                           : generateValidNumbers(n, length, validator, l);
+};
+
+function validABN(num) {
+  var n = num.toString().split("").map(function(x){return parseInt(x)});
+  var weights = [10,1,3,5,7,9,11,13,15,17,19];
+  n[0]--;
+  var sums = zip([n,weights]).reduce(function(b,a){return b + a[0]*a[1]},0);
+  return (sums % 89 == 0);
+};
+function generateABN(n) {
+  var list = generateValidNumbers(n, 11, validABN);
+  return list;
+};
+
+function validTFN(num) {
+  var n = num.toString().split("").map(function(x){return parseInt(x)});
+  var weights = [1,4,3,7,5,8,6,9,10];
+  var sums = zip([n,weights]).reduce(function(b,a){return b + a[0]*a[1]},0);
+  return (sums % 11 == 0);
+};
+function generateTFN(n) {
+  var list = generateValidNumbers(n, 9, validTFN);
+  return list;
+};
+
+function validIRD(num, weights) {
+  var weights = weights || [3,2,7,6,5,4,3,2];
+  var n = num.toString().split("").map(function(x){return parseInt(x)});
+  if (n.length < 9) { n.unshift(0) };
+  var check = zip([n.slice(0,8),weights]).reduce(function(b,a){return b + a[0]*a[1]},0) % 11;
+  return (check == 0) 
+    ? (n[8] == 0)
+    : (11 - check == 10) 
+      ? (weights[0] == 3) ? validIRD(num,[7,4,3,2,5,2,7,6]) : false
+      : (11 - check == n[8]);
+};
+function generateIRD(n) {
+  var list = generateValidNumbers(n, 9, validIRD);
+  return list;
+};
+
+</script>
+</body>
+</html>
